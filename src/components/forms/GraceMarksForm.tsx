@@ -2,16 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import InputField from "../InputField";
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import {
-  GraceMarkSchema,
-  graceMarkSchema,
-} from "@/lib/formValidationSchemas";
+import { GraceMarkSchema, graceMarkSchema } from "@/lib/formValidationSchemas";
 import { useFormState } from "react-dom";
-import {
-  updateGraceMark,
-} from "@/lib/actions";
+import { updateGraceMark } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
@@ -21,10 +15,16 @@ const GraceMarkForm = ({
   setOpen,
   relatedData,
 }: {
-  type:"update";
+  type: "update";
   data?: any;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  relatedData?: any;
+  relatedData?: {
+    students: any[];
+    subjects: any[];
+    teachers: any[];
+    graceMarks: any;
+    studentResult: any;
+  };
 }) => {
   const {
     register,
@@ -32,24 +32,32 @@ const GraceMarkForm = ({
     formState: { errors },
     setValue,
     watch,
-    unregister,
+    reset,
   } = useForm<GraceMarkSchema>({
     resolver: zodResolver(graceMarkSchema),
   });
 
-  const [state, formAction] = useFormState(
-    updateGraceMark,
-    {
-      success: false,
-      error: false,
-    }
-  );
-
-  const [hasSessionalExam, setHasSessionalExam] = useState(
-    data?.sessionalExam !== undefined && data?.sessionalExam !== "-"
-  );
+  const [state, formAction] = useFormState(updateGraceMark, {
+    success: false,
+    error: false,
+  });
 
   const router = useRouter();
+  const studentGraceMarks = relatedData?.graceMarks || {};
+  const availableGraceMarks = (studentGraceMarks.totalGrace || 0) - (studentGraceMarks.usedGrace || 0);
+  
+  const studentResult = relatedData?.studentResult || {};
+  const currentMarks = studentResult.overallMark || 0;
+  
+  const selectedSubject = relatedData?.subjects.find((s: any) => s.id === watch("subjectId")) || {};
+  const maxMarks = selectedSubject.maxMarks || 100;
+  const passingMarks = Math.ceil(maxMarks * 0.4);
+  const requiredGraceMarks = Math.max(0, passingMarks - currentMarks);
+  
+  const appliedGrace = Number(watch("graceMark") || 0);
+  const newTotalMarks = currentMarks + appliedGrace;
+  const willPass = newTotalMarks >= passingMarks;
+
   const calculateGrade = (marks: number) => {
     if (marks >= 90) return "A+";
     if (marks >= 80) return "A";
@@ -58,178 +66,211 @@ const GraceMarkForm = ({
     if (marks >= 50) return "C+";
     if (marks >= 45) return "C";
     if (marks >= 40) return "D";
-    return "E"; 
-  }; 
-  useEffect(() => {
-    const overallMarks = watch("overallMark");
-    if (overallMarks !== undefined && overallMarks !== "") {
-      setValue("grade", calculateGrade(Number(overallMarks)));
-    }
-  }, [watch("overallMark"), setValue]);
-
-  useEffect(() => {
-    if (!hasSessionalExam) {
-      unregister("sessionalExam"); 
-    } else {
-      setValue("sessionalExam", data?.sessionalExam || ""); // Restore previous value if enabled
-    }
-  }, [hasSessionalExam, unregister, setValue, data]);
+    return "E";
+  };
 
   const onSubmit = handleSubmit((formData) => {
-    const finalData = {
+    const submissionData = {
       ...formData,
-      sessionalExam: hasSessionalExam ? formData.sessionalExam : "-", // Always pass "-"
+      studentId: data?.student?.id,
+      currentMarks,
+      newTotalMarks,
+      previousGrade: studentResult.grade,
+      newGrade: calculateGrade(newTotalMarks),
+      maxMarks,
+      passingMarks,
     };
-    formAction(finalData);
+    formAction(submissionData);
   });
 
   useEffect(() => {
     if (state.success) {
-      toast(`Grace Marks has been used!`);
+      toast.success(`Grace Marks applied successfully!`);
       setOpen(false);
       router.refresh();
+    } else if (state.error) {
+      toast.error("Failed to apply grace marks");
     }
-  }, [state, router, type, setOpen]);
+  }, [state, router, setOpen]);
+
   useEffect(() => {
     if (data?.student) {
       setValue("studentId", data.student.id);
+      if (studentResult.subjectId) {
+        setValue("subjectId", studentResult.subjectId);
+      }
     }
-  }, [data, setValue]);
-
-  const { students, subjects, teachers } = relatedData;
+  }, [data, setValue, studentResult]);
 
   return (
-    <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      {data?.student && (
-    <h2 className="text-lg font-bold text-gray-800">
-      {data.student.name}
-      {}
-    </h2>
-  )}
+    <form className="flex flex-col gap-6" onSubmit={onSubmit}>
+      {/* Student Information Section */}
+      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <h2 className="text-lg font-bold text-gray-800 mb-4">
+          {data?.student?.name || "Select Student"}
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-3 rounded shadow border">
+            <p className="text-sm text-gray-500">Available Grace Marks</p>
+            <p className="text-xl font-semibold">
+              {availableGraceMarks} / {studentGraceMarks.totalGrace || 0}
+            </p>
+          </div>
+          
+          <div className="bg-white p-3 rounded shadow border">
+            <p className="text-sm text-gray-500">Current Marks</p>
+            <p className="text-xl font-semibold">{currentMarks}</p>
+            <p className="text-xs text-gray-500">Grade: {studentResult.grade || "N/A"}</p>
+          </div>
+          
+          <div className="bg-white p-3 rounded shadow border">
+            <p className="text-sm text-gray-500">Passing Marks</p>
+            <p className="text-xl font-semibold">{passingMarks}</p>
+            <p className="text-xs text-gray-500">(40% of {maxMarks})</p>
+          </div>
+          
+          <div className="bg-white p-3 rounded shadow border">
+            <p className="text-sm text-gray-500">Required to Pass</p>
+            <p className="text-xl font-semibold">
+              {requiredGraceMarks > 0 ? 
+                `${requiredGraceMarks} needed` : 
+                "Already passed"}
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <h1 className="text-xl font-semibold">
-        Grace Marks
-      </h1>
+      {/* Grace Marks Application Section */}
+      <div className="space-y-6">
+        <h1 className="text-xl font-semibold text-gray-800">
+          Apply Grace Marks
+        </h1>
 
-      <div className="flex justify-between flex-wrap gap-4">
-        {/* Sessional Exam */}
-        {hasSessionalExam && (
-          <InputField
-            label="Sessional Exam"
-            name="sessionalExam"
-            defaultValue={data?.sessionalExam || ""}
-            register={register}
-            error={errors.sessionalExam}
-          />
-        )}
-
-        {/* End Term Exam */}
-        <InputField
-          label="End Term Exam"
-          name="endTerm"
-          defaultValue={data?.endTerm}
-          register={register}
-          error={errors.endTerm}
-        />
-
-        {/* Overall Marks */}
-        <InputField
-          label="Overall Marks"
-          name="overallMark"
-          defaultValue={data?.overallMark}
-          register={register}
-          error={errors.overallMark}
-        />
-
-        {/* Grade (Auto-filled) */}
-        <InputField
-          label="Grade"
-          name="grade"
-          defaultValue={data?.grade}
-          register={register}
-          error={errors.grade}
-          disabled // Prevent user from manually entering
-        />
-
-        {data && (
-          <InputField
-            label="Id"
-            name="id"
-            defaultValue={data?.id}
-            register={register}
-            error={errors?.id}
-            hidden
-          />
-        )}
-
-        {/* Student Selection */}
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-  <label className="text-xs text-gray-500">Student</label>
-  <select
-    className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-    {...register("studentId")}
-    defaultValue={data?.studentId} // Ensure pre-selected value
-  >
-    {students.map((student: { id: string; name: string }) => (
-      <option value={student.id} key={student.id}>
-        {student.name}
-      </option>
-    ))}
-  </select>
-  {errors.studentId?.message && (
-    <p className="text-xs text-red-400">{errors.studentId.message.toString()}</p>
-  )}
-</div>
-
+        {/* Hidden fields */}
+        <input type="hidden" {...register("studentId")} />
+        <input type="hidden" {...register("id")} defaultValue={data?.id} />
 
         {/* Subject Selection */}
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Subject</label>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Subject</label>
           <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
             {...register("subjectId")}
-            defaultValue={data?.subjectId}
+            defaultValue={studentResult.subjectId}
           >
-            {subjects.map((subject: { id: number; name: string }) => (
+            {relatedData.subjects.map((subject: any) => (
               <option value={subject.id} key={subject.id}>
-                {subject.name}
+                {subject.name} (Max: {subject.maxMarks} marks)
               </option>
             ))}
           </select>
-          {errors.subjectId?.message && (
-            <p className="text-xs text-red-400">
-              {errors.subjectId.message.toString()}
-            </p>
+          {errors.subjectId && (
+            <p className="mt-1 text-sm text-red-600">{errors.subjectId.message}</p>
           )}
         </div>
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Teacher</label>
+
+        {/* Grace Marks Input */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Grace Marks to Apply
+          </label>
+          <input
+            type="number"
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+            {...register("graceMark", {
+              valueAsNumber: true,
+              min: 0,
+              max: availableGraceMarks,
+            })}
+            defaultValue={0}
+          />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Min: 0</span>
+            <span>Max: {availableGraceMarks}</span>
+          </div>
+          {errors.graceMark && (
+            <p className="mt-1 text-sm text-red-600">{errors.graceMark.message}</p>
+          )}
+        </div>
+
+        {/* Preview of Changes */}
+        {appliedGrace > 0 && (
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h3 className="font-medium text-blue-800 mb-2">Preview of Changes</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-blue-700">Current Marks</p>
+                <p className="font-medium">{currentMarks}</p>
+              </div>
+              <div>
+                <p className="text-sm text-blue-700">After Grace Marks</p>
+                <p className="font-medium">{newTotalMarks}</p>
+              </div>
+              <div>
+                <p className="text-sm text-blue-700">Current Grade</p>
+                <p className="font-medium">{studentResult.grade || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-blue-700">New Grade</p>
+                <p className="font-medium">{calculateGrade(newTotalMarks)}</p>
+              </div>
+            </div>
+            <p className={`mt-2 text-sm font-medium ${willPass ? 'text-green-600' : 'text-red-600'}`}>
+              {willPass ? "Student will PASS with these grace marks" : "Student will still FAIL with these grace marks"}
+            </p>
+          </div>
+        )}
+
+        {/* Teacher Approval */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Approved By</label>
           <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
             {...register("teacherId")}
             defaultValue={data?.teacherId}
           >
-            {teachers.map((teacher: { id: string; name: string }) => (
+            {relatedData.teachers.map((teacher: any) => (
               <option value={teacher.id} key={teacher.id}>
-                {teacher.name}
+                {teacher.name} ({teacher.username})
               </option>
             ))}
           </select>
-          {errors.teacherId?.message && (
-            <p className="text-xs text-red-400">
-              {errors.teacherId.message.toString()}
-            </p>
+          {errors.teacherId && (
+            <p className="mt-1 text-sm text-red-600">{errors.teacherId.message}</p>
           )}
         </div>
       </div>
 
-      {state.error && <span className="text-red-500">Something went wrong!</span>}
+      {/* Form Actions */}
+      <div className="flex justify-end gap-4 pt-4">
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className={`px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+            availableGraceMarks <= 0
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+          disabled={availableGraceMarks <= 0}
+        >
+          {availableGraceMarks <= 0 ? 'No Grace Marks Available' : 'Apply Grace Marks'}
+        </button>
+      </div>
 
-      <button type="submit" className="bg-blue-400 text-white p-2 rounded-md">
-        {type === "create" ? "Create" : "Update"}
-      </button>
+      {state.error && (
+        <div className="p-4 text-sm text-red-700 bg-red-100 rounded-md">
+          Something went wrong while applying grace marks. Please try again.
+        </div>
+      )}
     </form>
   );
 };
 
-export default ResultForm;
+export default GraceMarkForm;

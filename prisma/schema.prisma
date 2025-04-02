@@ -35,23 +35,26 @@ model Student {
   attendances  Attendance[]
   results      Result[]
   studentExams StudentExam[]
+  GraceMarks   GraceMarks?
+  Reappear     Reappear[]
+  Failed       Failed[]
 }
 
 model Teacher {
-  id            String                @id @default(uuid())
-  username      String                @unique
-  password      String
-  name          String
-  email         String?               @unique
-  phone         String?               @unique
-  division      String?
-  createdAt     DateTime              @default(now())
-  subjects      Subject[]
-  lectures      Lectures[]
-  branches      Branch[]
-  announcements AnnouncementTeacher[]
-  results       Result[]
-  invigilatedExams Exam[]            @relation("TeacherToExam")
+  id               String                @id @default(uuid())
+  username         String                @unique
+  password         String
+  name             String
+  email            String?               @unique
+  phone            String?               @unique
+  division         String?
+  createdAt        DateTime              @default(now())
+  subjects         Subject[]
+  lectures         Lectures[]
+  branches         Branch[]
+  announcements    AnnouncementTeacher[]
+  results          Result[]
+  invigilatedExams Exam[]                @relation("TeacherToExam")
 }
 
 model Registrar {
@@ -73,13 +76,16 @@ model TheoryIncharge {
 }
 
 model Semester {
-  id       Int       @id @default(autoincrement())
-  level    Int
-  students Student[]
-  branchId Int // foreign key to Branch
-  branch   Branch    @relation(fields: [branchId], references: [id])
-  subjects Subject[]
-  exams    Exam[]
+  id         Int          @id @default(autoincrement())
+  level      Int
+  students   Student[]
+  branchId   Int // foreign key to Branch
+  branch     Branch       @relation(fields: [branchId], references: [id])
+  subjects   Subject[]
+  exams      Exam[]
+  GraceMarks GraceMarks[]
+  Reappear   Reappear[]
+  Failed     Failed[]
 }
 
 model StudentExam {
@@ -118,6 +124,8 @@ model Subject {
   lectures    Lectures[]
   results     Result[]
   exams       Exam[]
+  Reappear    Reappear[]
+  Failed      Failed[]
 }
 
 model Lectures {
@@ -137,30 +145,30 @@ model Lectures {
 }
 
 model Exam {
-  id                    Int                  @id @default(autoincrement())
-  subjectId             Int
-  subject               Subject              @relation(fields: [subjectId], references: [id])
-  examDate              DateTime
-  startTime             DateTime
-  endTime               DateTime
-  semesterId            Int
-  semester              Semester             @relation(fields: [semesterId], references: [id])
-  branchId              Int
-  branch                Branch               @relation(fields: [branchId], references: [id])
-  createdAt             DateTime             @default(now())
-  studentExams          StudentExam[]
-  lecture               Lectures?            @relation(fields: [lecturesId], references: [id])
-  lecturesId            Int?
-  teacherInvigilators   Teacher[]            @relation("TeacherToExam")
+  id                   Int                   @id @default(autoincrement())
+  subjectId            Int
+  subject              Subject               @relation(fields: [subjectId], references: [id])
+  examDate             DateTime
+  startTime            DateTime
+  endTime              DateTime
+  semesterId           Int
+  semester             Semester              @relation(fields: [semesterId], references: [id])
+  branchId             Int
+  branch               Branch                @relation(fields: [branchId], references: [id])
+  createdAt            DateTime              @default(now())
+  studentExams         StudentExam[]
+  lecture              Lectures?             @relation(fields: [lecturesId], references: [id])
+  lecturesId           Int?
+  teacherInvigilators  Teacher[]             @relation("TeacherToExam")
   externalInvigilators ExternalInvigilator[]
-  ExamSchedule          ExamSchedule[]
+  ExamSchedule         ExamSchedule[]
 }
 
 model ExternalInvigilator {
   id        Int      @id @default(autoincrement())
   name      String
   examId    Int
-  exam      Exam              @relation(fields: [examId], references: [id])
+  exam      Exam     @relation(fields: [examId], references: [id])
   createdAt DateTime @default(now())
 }
 
@@ -173,21 +181,21 @@ model ExamSchedule {
 }
 
 model Result {
-  id            Int     @id @default(autoincrement())
+  id            Int      @id @default(autoincrement())
   sessionalExam String?
   endTerm       Int?
   overallMark   Int
   grade         String
-  studentId String
-  student   Student @relation(fields: [studentId], references: [id], map: "Result_studentId_fk")
-  subjectId Int?
-  subject   Subject? @relation(fields: [subjectId], references: [id], map: "Result_subjectId_fk")
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id], map: "Result_studentId_fk")
+  subjectId     Int?
+  subject       Subject? @relation(fields: [subjectId], references: [id], map: "Result_subjectId_fk")
 
   teacherId String?
   teacher   Teacher? @relation(fields: [teacherId], references: [id], map: "Result_teacherId_fk")
 
   usedGrace Boolean @default(false)
-  verified Boolean @default(false)
+  verified  Boolean @default(false)
 }
 
 model Attendance {
@@ -221,37 +229,37 @@ model AnnouncementTeacher {
 }
 
 model GraceMarks {
-  id         Int      @id @default(autoincrement())
-  studentId  String   @unique
+  id         Int    @id @default(autoincrement())
+  studentId  String @unique
   semesterId Int
   totalGrace Int
-  usedGrace  Int      @default(0)
+  usedGrace  Int    @default(0)
 
-  student    Student  @relation(fields: [studentId], references: [id])
-  semester   Semester @relation(fields: [semesterId], references: [id])
+  student  Student  @relation(fields: [studentId], references: [id])
+  semester Semester @relation(fields: [semesterId], references: [id])
 }
 
 model Reappear {
-  id         Int      @id @default(autoincrement())
+  id         Int     @id @default(autoincrement())
   studentId  String
   subjectId  Int
   semesterId Int
-  isFeePaid  Boolean  @default(false)
+  isFeePaid  Boolean @default(false)
 
-  student    Student  @relation(fields: [studentId], references: [id])
-  subject    Subject  @relation(fields: [subjectId], references: [id])
-  semester   Semester @relation(fields: [semesterId], references: [id])
+  student  Student  @relation(fields: [studentId], references: [id])
+  subject  Subject  @relation(fields: [subjectId], references: [id])
+  semester Semester @relation(fields: [semesterId], references: [id])
 }
 
 model Failed {
-  id         Int      @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   studentId  String
   subjectId  Int
   semesterId Int
 
-  student    Student  @relation(fields: [studentId], references: [id])
-  subject    Subject  @relation(fields: [subjectId], references: [id])
-  semester   Semester @relation(fields: [semesterId], references: [id])
+  student  Student  @relation(fields: [studentId], references: [id])
+  subject  Subject  @relation(fields: [subjectId], references: [id])
+  semester Semester @relation(fields: [semesterId], references: [id])
 }
 
 enum AnnouncementType {

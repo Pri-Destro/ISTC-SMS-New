@@ -83,11 +83,11 @@ const StudentListPage = async ({
               <>View</>
             </button>
           </Link>
-          {(role === "admin" || role === "theoryIncharge") && (
+          {(role === "admin" || role === "theoryIncharge" || role ==="registrar") && (
             <FormContainer table="student" type="delete" id={item.id} />
           )}
           
-          {(role === "teacher" ) && (
+          {(role === "teacher"  ) && (
             <FormContainer table="result" type="create" data={{ student: item }} />
           )}
         </div>
@@ -185,7 +185,7 @@ const StudentListPage = async ({
               semester={semester}
             />
             {(
-              role === "admin" || role === "theoryIncharge") && (
+              role === "admin" || role === "registrar") && (
               <FormContainer table="student" type="create" />
             )}
           </div>

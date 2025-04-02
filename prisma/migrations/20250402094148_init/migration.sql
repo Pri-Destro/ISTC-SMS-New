@@ -179,6 +179,7 @@ CREATE TABLE `Result` (
     `studentId` VARCHAR(191) NOT NULL,
     `subjectId` INTEGER NULL,
     `teacherId` VARCHAR(191) NULL,
+    `usedGrace` BOOLEAN NOT NULL DEFAULT false,
     `verified` BOOLEAN NOT NULL DEFAULT false,
 
     PRIMARY KEY (`id`)
@@ -214,6 +215,39 @@ CREATE TABLE `AnnouncementTeacher` (
     `teacherId` VARCHAR(191) NOT NULL,
 
     PRIMARY KEY (`announcementId`, `teacherId`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `GraceMarks` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `studentId` VARCHAR(191) NOT NULL,
+    `semesterId` INTEGER NOT NULL,
+    `totalGrace` INTEGER NOT NULL,
+    `usedGrace` INTEGER NOT NULL DEFAULT 0,
+
+    UNIQUE INDEX `GraceMarks_studentId_key`(`studentId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Reappear` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `studentId` VARCHAR(191) NOT NULL,
+    `subjectId` INTEGER NOT NULL,
+    `semesterId` INTEGER NOT NULL,
+    `isFeePaid` BOOLEAN NOT NULL DEFAULT false,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Failed` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `studentId` VARCHAR(191) NOT NULL,
+    `subjectId` INTEGER NOT NULL,
+    `semesterId` INTEGER NOT NULL,
+
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -311,6 +345,30 @@ ALTER TABLE `AnnouncementTeacher` ADD CONSTRAINT `AnnouncementTeacher_announceme
 
 -- AddForeignKey
 ALTER TABLE `AnnouncementTeacher` ADD CONSTRAINT `AnnouncementTeacher_teacherId_fkey` FOREIGN KEY (`teacherId`) REFERENCES `Teacher`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `GraceMarks` ADD CONSTRAINT `GraceMarks_studentId_fkey` FOREIGN KEY (`studentId`) REFERENCES `Student`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `GraceMarks` ADD CONSTRAINT `GraceMarks_semesterId_fkey` FOREIGN KEY (`semesterId`) REFERENCES `Semester`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Reappear` ADD CONSTRAINT `Reappear_studentId_fkey` FOREIGN KEY (`studentId`) REFERENCES `Student`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Reappear` ADD CONSTRAINT `Reappear_subjectId_fkey` FOREIGN KEY (`subjectId`) REFERENCES `Subject`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Reappear` ADD CONSTRAINT `Reappear_semesterId_fkey` FOREIGN KEY (`semesterId`) REFERENCES `Semester`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Failed` ADD CONSTRAINT `Failed_studentId_fkey` FOREIGN KEY (`studentId`) REFERENCES `Student`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Failed` ADD CONSTRAINT `Failed_subjectId_fkey` FOREIGN KEY (`subjectId`) REFERENCES `Subject`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Failed` ADD CONSTRAINT `Failed_semesterId_fkey` FOREIGN KEY (`semesterId`) REFERENCES `Semester`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `_BranchToTeacher` ADD CONSTRAINT `_BranchToTeacher_A_fkey` FOREIGN KEY (`A`) REFERENCES `Branch`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

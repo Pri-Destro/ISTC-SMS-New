@@ -20,6 +20,7 @@ const InputField = ({
   error,
   hidden,
   inputProps,
+  
 }: InputFieldProps) => {
   return (
     <div className={hidden ? "hidden" : "flex flex-col gap-2 w-full md:w-1/4"}>

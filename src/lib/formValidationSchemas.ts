@@ -31,6 +31,27 @@ export const branchSchema = z.object({
 
 export type BranchSchema = z.infer<typeof branchSchema>;
 
+export const graceMarkSchema = z.object({
+  id: z.number().optional(),
+  studentId: z.string().min(1, "Student ID is required"),
+  subjectId: z.number().min(1, "Subject is required"),
+  teacherId: z.string().min(1, "Approving teacher is required"),
+  graceMark: z.number()
+    .min(0, "Grace marks cannot be negative")
+
+    .refine(
+      (value) => value % 0.5 === 0, 
+      "Grace marks must be in whole numbers or half marks (0.5)"
+    ),
+  currentMarks: z.number().optional(),
+  newTotalMarks: z.number().optional(),
+  previousGrade: z.string().optional(),
+  newGrade: z.string().optional(),
+  maxMarks: z.number().optional(),
+  passingMarks: z.number().optional(),
+});
+
+export type GraceMarkSchema = z.infer<typeof graceMarkSchema>;
 export const teacherSchema = z.object({
   id: z.string().optional(),
   username: z

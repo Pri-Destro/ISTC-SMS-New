@@ -1184,13 +1184,13 @@ export const deleteResult = async (
   }
 };
 
-const applyGraceMarks = async (
+export const updateGraceMark= async (
   studentId: string,
   subjectId: number,
   newMarks: number // Marks after grace is applied (provided from frontend)
 ) => {
   // Fetch the student's failure record
-  const failedRecord = await prisma.failedStudents.findFirst({
+  const failedRecord = await prisma.failed.findFirst({
     where: { studentId, subjectId },
   });
 
@@ -1224,7 +1224,7 @@ const applyGraceMarks = async (
   });
 
   // Remove the student from the failedStudents table
-  await prisma.failedStudents.deleteMany({
+  await prisma.failed.deleteMany({
     where: { studentId, subjectId },
   });
 
