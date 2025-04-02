@@ -13,7 +13,8 @@ export type FormContainerProps = {
     | "exam"
     | "result"
     | "attendance"
-    | "announcement";
+    | "announcement"
+    | "graceMark";
   type: "create" | "update" | "delete";
   data?: any;
   id?: number | string;
@@ -125,6 +126,9 @@ const FormContainer = async ({
 
         relatedData = { branches: announcementBranches, teachers: announcementTeacher };
         break;
+        
+      case "graceMark":
+
 
       case "result":
         const resultStudents = await prisma.student.findMany({

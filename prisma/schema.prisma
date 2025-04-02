@@ -25,7 +25,6 @@ model Student {
   phone        String
   email        String?
   sex          UserSex?
-  category     String?
   bloodType    String?
   createdAt    DateTime      @default(now())
   branchId     Int

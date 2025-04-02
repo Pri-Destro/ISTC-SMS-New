@@ -62,6 +62,9 @@ const AnnouncementForm = dynamic(() => import("./forms/AnnouncementForm"), {
 const ResultForm = dynamic(() => import("./forms/ResultForm"), {
   loading: () => <h1>Loading...</h1>,
 });
+const GraceMarksForm = dynamic(() => import("./forms/GraceMarksForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
 // TODO: OTHER FORMS
 
 const forms: {
@@ -139,6 +142,14 @@ const forms: {
   ),
   result: (setOpen, type, data, relatedData) => (
     <ResultForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
+  graceMark: (setOpen, type, data, relatedData) => (
+    <GraceMarksForm
       type={type}
       data={data}
       setOpen={setOpen}

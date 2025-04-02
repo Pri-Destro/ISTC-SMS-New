@@ -5,25 +5,57 @@ import Pagination from "@/components/Pagination";
 import { ResultFilters } from "@/components/Filter";
 import type { Result, Student, Subject, Branch, Teacher } from "@prisma/client";
 import TableSearch from "@/components/TableSearch";
+import FormContainer from "@/components/FormContainer";
+import { auth } from "@clerk/nextjs/server";
 
-type ResultList = Result & { student: Student; subject: Subject; branch: Branch; teacher: Teacher };
+type ResultList = Result & {
+  student: Student;
+  subject: Subject;
+  branch: Branch;
+  teacher: Teacher;
+};
 
-const FailedResultListPage = async ({ searchParams }: { searchParams: { [key: string]: string | undefined } }) => {
+const FailedResultListPage = async ({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | undefined };
+}) => {
+  const { sessionClaims } = auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
   const columns = [
-    { header: "Student Name", accessor: "student.name", className: "hidden md:table-cell" },
-    { header: "Marks", accessor: "overallMark", className: "hidden md:table-cell" },
-    { header: "Subject", accessor: "subject.name", className: "hidden md:table-cell" },
+    {
+      header: "Student Name",
+      accessor: "student.name",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Marks",
+      accessor: "overallMark",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Subject",
+      accessor: "subject.name",
+      className: "hidden md:table-cell",
+    },
     { header: "Actions", accessor: "action" },
   ];
 
   const renderRow = (item: ResultList) => (
-    <tr key={item.id} className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight">
+    <tr
+      key={item.id}
+      className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
+    >
       <td className="hidden md:table-cell">{item.student.name}</td>
       <td className="hidden md:table-cell">{item.overallMark}</td>
       <td className="hidden md:table-cell">{item.subject.name}</td>
       <td>
         <div className="flex items-center gap-2">
-          {/* Add actions if necessary */}
+          {role === "registrar" && (
+            <>
+              <FormContainer table="graceMark" type="update" data={item} />
+            </>
+          )}
         </div>
       </td>
     </tr>
@@ -33,11 +65,13 @@ const FailedResultListPage = async ({ searchParams }: { searchParams: { [key: st
   const p = page ? Number.parseInt(page) : 1;
 
   const query: Prisma.ResultWhereInput = {
-    grade: { equals: 'E' }, 
+    grade: { equals: "E" },
   };
 
   if (queryParams.studentName) {
-    query.student = { name: { contains: queryParams.studentName, mode: "insensitive" } };
+    query.student = {
+      name: { contains: queryParams.studentName, mode: "insensitive" },
+    };
   }
 
   if (branchId) {
@@ -68,14 +102,14 @@ const FailedResultListPage = async ({ searchParams }: { searchParams: { [key: st
       }),
       prisma.result.count({ where: query }),
     ]);
-  
+
     const data = dataRes.map((item) => ({ ...item }));
-    console.log('Fetched data:', data); // Log data for inspection
-  
+    console.log("Fetched data:", data); // Log data for inspection
+
     const branches = await prisma.branch.findMany().catch(() => []);
     const semesters = await prisma.semester.findMany().catch(() => []);
     const subjects = await prisma.subject.findMany().catch(() => []);
-  
+
     return (
       <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
         <h1 className="text-2xl font-bold mb-4">Failed Students</h1>
@@ -97,10 +131,12 @@ const FailedResultListPage = async ({ searchParams }: { searchParams: { [key: st
     return (
       <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
         <h1 className="text-lg font-semibold">Failed Results</h1>
-        <p className="text-gray-500">Error loading failed results. Please try again later.</p>
+        <p className="text-gray-500">
+          Error loading failed results. Please try again later.
+        </p>
       </div>
     );
   }
-}  
+};
 
 export default FailedResultListPage;

@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const failedStudents: { studentId: string; subjectId: number }[] = [];
+    const failedStudents: { studentId: string; subjectId: number; semesterId: number }[] = [];
 
     const results = await Promise.all(
       resultData.map(async (row) => {
@@ -208,21 +208,31 @@ export async function POST(req: NextRequest) {
           throw new Error(`Student with username '${row["Roll No"]}' not found`);
         }
 
-        // Find the subject in the database to get `maxMarks`
+        // Find the subject in the database with semester information
         const subject = await prisma.subject.findFirst({
           where: { subjectCode: row["Subject Code"] },
+          include: {
+            semester: true // Include semester information
+          }
         });
         if (!subject) {
           throw new Error(`Subject with code '${row["Subject Code"]}' not found`);
+        }
+        if (!subject.semester) {
+          throw new Error(`Subject '${row["Subject Code"]}' is not associated with a semester`);
         }
 
         const maxMarks = subject.maxMarks!;
         const percentage = (row["Overall Mark"] / maxMarks) * 100;
         const grade = calculateGrade(percentage);
 
-        // If grade is "E", move student to `failed` table
+        // If grade is "E", add student to failedStudents with semesterId
         if (grade === "E") {
-          failedStudents.push({ studentId: student.id, subjectId: subject.id });
+          failedStudents.push({ 
+            studentId: student.id, 
+            subjectId: subject.id,
+            semesterId: subject.semester.id
+          });
         }
 
         return {
@@ -242,7 +252,10 @@ export async function POST(req: NextRequest) {
 
     // Insert failed students into the `failed` table
     if (failedStudents.length > 0) {
-      await prisma.failed.createMany({ data: failedStudents, skipDuplicates: true });
+      await prisma.failed.createMany({ 
+        data: failedStudents, 
+        skipDuplicates: true 
+      });
     }
 
     return NextResponse.json({
