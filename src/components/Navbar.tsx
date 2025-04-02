@@ -16,7 +16,7 @@ const Navbar = async () => {
         />
       </div> */}
       <div className="flex items-center gap-6 text-2xl justify-end w-full font-extrabold font-times text-blue-950">
-        INDO SWISS TRIANING CENTRE,SECTOR 30C, CHANDIGARH 
+        INDO SWISS TRAINING CENTRE,SECTOR 30C, CHANDIGARH 
         </div>
       {/* ICONS AND USER */}
       <div className="flex items-center gap-6 justify-end w-full">
