@@ -183,7 +183,7 @@ model ExamSchedule {
 model Result {
   id            Int      @id @default(autoincrement())
   sessionalExam String?
-  endTerm       Int?
+  endTerm       Int
   overallMark   Int
   grade         String
   studentId     String

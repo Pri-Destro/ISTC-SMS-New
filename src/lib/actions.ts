@@ -13,7 +13,7 @@ import {
   TheoryInchargeSchema,
 } from "./formValidationSchemas";
 import prisma from "./prisma";
-import { clerkClient } from "@clerk/nextjs/server";
+import { clerkClient, currentUser } from "@clerk/nextjs/server";
 
 import { writeFile, mkdir, unlink } from "fs/promises";
 import { join, resolve } from "path";
@@ -1184,49 +1184,84 @@ export const deleteResult = async (
   }
 };
 
-export const updateGraceMark= async (
-  studentId: string,
-  subjectId: number,
-  newMarks: number // Marks after grace is applied (provided from frontend)
-) => {
+export const updateGraceMark = async (submissionData: {
+  studentId: string;
+  subjectId: number;
+  currentMarks: number;
+  newTotalMarks: number;
+  previousGrade: string;
+  newGrade: string;
+  maxMarks: number;
+  passingMarks: number;
+}) => {
+  const { studentId, subjectId, currentMarks, newTotalMarks, newGrade, passingMarks } = submissionData;
+
   // Fetch the student's failure record
   const failedRecord = await prisma.failed.findFirst({
     where: { studentId, subjectId },
   });
 
   if (!failedRecord) {
-    return { success: false, error: "Student is not in failed list" };
+    return { success: false, error: "Student is not in the failed list" };
   }
 
-  // Get the subject details
-  const subject = await prisma.subject.findUnique({
-    where: { id: subjectId },
+  // Get the grace marks record for the student's semester
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { semesterId: true },
   });
 
-  if (!subject) {
-    return { success: false, error: "Subject not found" };
+  if (!student) {
+    return { success: false, error: "Student not found" };
   }
 
-  const passingMark = Math.ceil(subject.maxMarks! * 0.4); // 40% required to pass
+  const graceRecord = await prisma.graceMarks.findUnique({
+    where: { studentId_semesterId: { studentId, semesterId: student.semesterId } },
+  });
 
-  if (newMarks < passingMark) {
-    return { success: false, error: "Marks after grace are still below passing criteria" };
+  if (!graceRecord) {
+    return { success: false, error: "Grace marks record not found" };
+  }
+
+  let graceLeft = graceRecord.totalGrace - graceRecord.usedGrace;
+  const neededGrace = passingMarks - currentMarks;
+
+  const result = await prisma.result.findFirst({
+    where: { studentId, subjectId },
+  });
+
+  if (!result) {
+    return { success: false, error: "Result record not found" };
+  }
+
+  const newEndTerm = result.endTerm + neededGrace;
+
+  if (neededGrace > graceLeft) {
+    return { success: false, error: "Not enough grace marks available" };
   }
 
   // Update the result table
   await prisma.result.updateMany({
     where: { studentId, subjectId },
     data: {
-      overallMark: newMarks,
-      grade: "D", // Grace marks applied, so minimum passing grade
-      usedGrace: true, // Mark that grace marks were used
+      overallMark: passingMarks,
+      endTerm: newEndTerm,
+      grade: newGrade,
+      usedGrace: true,
     },
   });
 
-  // Remove the student from the failedStudents table
+  // Deduct used grace marks from graceMarks table
+  await prisma.graceMarks.update({
+    where: { studentId_semesterId: { studentId, semesterId: student.semesterId } },
+    data: { usedGrace: graceRecord.usedGrace + neededGrace },
+  });
+
+  // Remove the student from the failed table
   await prisma.failed.deleteMany({
     where: { studentId, subjectId },
   });
 
   return { success: true, message: "Grace marks applied successfully, student removed from failed list" };
 };
+
