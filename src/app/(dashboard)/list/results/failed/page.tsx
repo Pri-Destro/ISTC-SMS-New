@@ -104,7 +104,6 @@ const FailedResultListPage = async ({
     ]);
 
     const data = dataRes.map((item) => ({ ...item }));
-    console.log("Fetched data:", data); // Log data for inspection
 
     const branches = await prisma.branch.findMany().catch(() => []);
     const semesters = await prisma.semester.findMany().catch(() => []);

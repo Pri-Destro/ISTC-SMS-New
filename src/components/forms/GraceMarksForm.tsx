@@ -44,29 +44,35 @@ const GraceMarkForm = ({
 
   const router = useRouter();
   const studentGraceMarks = relatedData?.graceMarks || {};
-  const availableGraceMarks = (studentGraceMarks.totalGrace || 0) - (studentGraceMarks.usedGrace || 0);
-  
+  const availableGraceMarks =
+    (studentGraceMarks.totalGrace || 0) - (studentGraceMarks.usedGrace || 0);
+
   const studentResult = relatedData?.studentResult || {};
   const currentMarks = studentResult.overallMark || 0;
-  
-  const selectedSubject = relatedData?.subjects.find((s: any) => s.id === watch("subjectId")) || {};
-  const maxMarks = selectedSubject.maxMarks || 100;
+
+  const subjectId = watch("subjectId");
+  const selectedSubject =
+    relatedData?.subjects.find((s: any) => s.id === subjectId) ||
+    (relatedData?.subjects.length
+      ? relatedData.subjects[0]
+      : { maxMarks: 100 });
+  const maxMarks = selectedSubject.maxMarks;
   const passingMarks = Math.ceil(maxMarks * 0.4);
   const requiredGraceMarks = Math.max(0, passingMarks - currentMarks);
-  
+
   const appliedGrace = Number(watch("graceMark") || 0);
   const newTotalMarks = currentMarks + appliedGrace;
+  const percentage = (newTotalMarks/ maxMarks) * 100
   const willPass = newTotalMarks >= passingMarks;
-
-  const calculateGrade = (marks: number) => {
-    if (marks >= 90) return "A+";
-    if (marks >= 80) return "A";
-    if (marks >= 70) return "B+";
-    if (marks >= 60) return "B";
-    if (marks >= 50) return "C+";
-    if (marks >= 45) return "C";
-    if (marks >= 40) return "D";
-    return "E";
+  const calculateGrade = (percentage: number) => {
+    if (percentage >= 90) return "A+";
+    if (percentage >= 80) return "A";
+    if (percentage >= 70) return "B+";
+    if (percentage >= 60) return "B";
+    if (percentage >= 50) return "C+";
+    if (percentage >= 45) return "C";
+    if (percentage >= 40) return "D";
+    return "E"; // Fail
   };
 
   const onSubmit = handleSubmit((formData) => {
@@ -76,7 +82,7 @@ const GraceMarkForm = ({
       currentMarks,
       newTotalMarks,
       previousGrade: studentResult.grade,
-      newGrade: calculateGrade(newTotalMarks),
+      newGrade: "D",
       maxMarks,
       passingMarks,
     };
@@ -107,9 +113,10 @@ const GraceMarkForm = ({
       {/* Student Information Section */}
       <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
         <h2 className="text-lg font-bold text-gray-800 mb-4">
+          Use Grace Marks for student -{" "}
           {data?.student?.name || "Select Student"}
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-3 rounded shadow border">
             <p className="text-sm text-gray-500">Available Grace Marks</p>
@@ -117,25 +124,27 @@ const GraceMarkForm = ({
               {availableGraceMarks} / {studentGraceMarks.totalGrace || 0}
             </p>
           </div>
-          
+
           <div className="bg-white p-3 rounded shadow border">
             <p className="text-sm text-gray-500">Current Marks</p>
             <p className="text-xl font-semibold">{currentMarks}</p>
-            <p className="text-xs text-gray-500">Grade: {studentResult.grade || "N/A"}</p>
+            <p className="text-xs text-gray-500">
+              Grade: {studentResult.grade || "N/A"}
+            </p>
           </div>
-          
+
           <div className="bg-white p-3 rounded shadow border">
             <p className="text-sm text-gray-500">Passing Marks</p>
             <p className="text-xl font-semibold">{passingMarks}</p>
             <p className="text-xs text-gray-500">(40% of {maxMarks})</p>
           </div>
-          
+
           <div className="bg-white p-3 rounded shadow border">
             <p className="text-sm text-gray-500">Required to Pass</p>
             <p className="text-xl font-semibold">
-              {requiredGraceMarks > 0 ? 
-                `${requiredGraceMarks} needed` : 
-                "Already passed"}
+              {requiredGraceMarks > 0
+                ? `${requiredGraceMarks} needed`
+                : "Already passed"}
             </p>
           </div>
         </div>
@@ -153,20 +162,24 @@ const GraceMarkForm = ({
 
         {/* Subject Selection */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Subject</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Subject
+          </label>
           <select
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
             {...register("subjectId")}
             defaultValue={studentResult.subjectId}
           >
-            {relatedData.subjects.map((subject: any) => (
+            {relatedData?.subjects.map((subject: any) => (
               <option value={subject.id} key={subject.id}>
                 {subject.name} (Max: {subject.maxMarks} marks)
               </option>
             ))}
           </select>
           {errors.subjectId && (
-            <p className="mt-1 text-sm text-red-600">{errors.subjectId.message}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {errors.subjectId.message}
+            </p>
           )}
         </div>
 
@@ -190,14 +203,18 @@ const GraceMarkForm = ({
             <span>Max: {availableGraceMarks}</span>
           </div>
           {errors.graceMark && (
-            <p className="mt-1 text-sm text-red-600">{errors.graceMark.message}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {errors.graceMark.message}
+            </p>
           )}
         </div>
 
         {/* Preview of Changes */}
         {appliedGrace > 0 && (
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h3 className="font-medium text-blue-800 mb-2">Preview of Changes</h3>
+            <h3 className="font-medium text-blue-800 mb-2">
+              Preview of Changes
+            </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-blue-700">Current Marks</p>
@@ -213,18 +230,26 @@ const GraceMarkForm = ({
               </div>
               <div>
                 <p className="text-sm text-blue-700">New Grade</p>
-                <p className="font-medium">{calculateGrade(newTotalMarks)}</p>
+                <p className="font-medium">{calculateGrade(percentage)}</p>
               </div>
             </div>
-            <p className={`mt-2 text-sm font-medium ${willPass ? 'text-green-600' : 'text-red-600'}`}>
-              {willPass ? "Student will PASS with these grace marks" : "Student will still FAIL with these grace marks"}
+            <p
+              className={`mt-2 text-sm font-medium ${
+                willPass ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {willPass
+                ? "Student will PASS with these grace marks"
+                : "Student will still FAIL with these grace marks"}
             </p>
           </div>
         )}
 
         {/* Teacher Approval */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Approved By</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Approved By
+          </label>
           <select
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
             {...register("teacherId")}
@@ -237,7 +262,9 @@ const GraceMarkForm = ({
             ))}
           </select>
           {errors.teacherId && (
-            <p className="mt-1 text-sm text-red-600">{errors.teacherId.message}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {errors.teacherId.message}
+            </p>
           )}
         </div>
       </div>
@@ -255,12 +282,14 @@ const GraceMarkForm = ({
           type="submit"
           className={`px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
             availableGraceMarks <= 0
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
           }`}
           disabled={availableGraceMarks <= 0}
         >
-          {availableGraceMarks <= 0 ? 'No Grace Marks Available' : 'Apply Grace Marks'}
+          {availableGraceMarks <= 0
+            ? "No Grace Marks Available"
+            : "Apply Grace Marks"}
         </button>
       </div>
 

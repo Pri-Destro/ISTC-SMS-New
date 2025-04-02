@@ -50,7 +50,7 @@ const FormContainer = async ({
             : {},
           select: { id: true, name: true },
         });
-        
+
         // console.log("Filtered Teachers:", subjectTeachers); // Log the results
 
         const subjectSemesters = await prisma.semester.findMany({
@@ -101,7 +101,10 @@ const FormContainer = async ({
           include: { _count: { select: { students: true } } },
         });
 
-        relatedData = { branches: studentBranches, semesters: studentSemesters };
+        relatedData = {
+          branches: studentBranches,
+          semesters: studentSemesters,
+        };
         break;
 
       case "exam":
@@ -123,12 +126,93 @@ const FormContainer = async ({
           select: { id: true, name: true },
         });
 
-
-        relatedData = { branches: announcementBranches, teachers: announcementTeacher };
+        relatedData = {
+          branches: announcementBranches,
+          teachers: announcementTeacher,
+        };
         break;
-        
-      case "graceMark":
 
+      case "graceMark":
+        let existingData = null;
+        if (id) {
+          existingData = await prisma.graceMarks.findUnique({
+            where: { id: Number(id) },
+            include: {
+              student: {
+                include: {
+                  GraceMarks: true,
+                  semester: {
+                    include: {
+                      subjects: true,
+                    },
+                  },
+                },
+              },
+              subject: true,
+            },
+          });
+        }
+        const graceMarkStudents = await prisma.student.findMany({
+          where: {
+            GraceMarks: {
+              isNot: null,
+            },
+          },
+          include: {
+            GraceMarks: true,
+            semester: {
+              include: {
+                subjects: true,
+              },
+            },
+          },
+        });
+        const graceMarkSubjects = await prisma.subject.findMany({
+          where: {
+            results: {
+              some: {},
+            },
+          },
+          select: {
+            id: true,
+            name: true,
+            maxMarks: true,
+            subjectCode: true,
+          },
+        });
+        const graceMarkTeachers = await prisma.teacher.findMany({
+          select: { id: true, name: true, username: true },
+        });
+        let studentResult = null;
+        if (existingData) {
+          studentResult = await prisma.result.findFirst({
+            where: {
+              studentId: existingData.studentId,
+              subjectId: existingData.subjectId,
+            },
+          });
+        }
+
+        relatedData = {
+          students: graceMarkStudents,
+          subjects: graceMarkSubjects,
+          teachers: graceMarkTeachers,
+          // Include specific data for update case
+          ...(existingData
+            ? {
+                graceMarks: existingData.student.GraceMarks,
+                studentResult: studentResult
+                  ? {
+                      overallMark: studentResult.overallMark,
+                      grade: studentResult.grade,
+                      subjectId: existingData.subjectId,
+                      maxMarks: existingData.subject.maxMarks,
+                    }
+                  : null,
+              }
+            : {}),
+        };
+        break;
 
       case "result":
         const resultStudents = await prisma.student.findMany({

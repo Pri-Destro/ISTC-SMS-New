@@ -25,6 +25,8 @@ CREATE TABLE `Student` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `branchId` INTEGER NOT NULL,
     `semesterId` INTEGER NOT NULL,
+    `hasPassed` BOOLEAN NOT NULL DEFAULT false,
+    `hasLeft` BOOLEAN NOT NULL DEFAULT false,
 
     UNIQUE INDEX `Student_username_key`(`username`),
     PRIMARY KEY (`id`)
@@ -172,7 +174,7 @@ CREATE TABLE `ExamSchedule` (
 CREATE TABLE `Result` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `sessionalExam` VARCHAR(191) NULL,
-    `endTerm` INTEGER NULL,
+    `endTerm` INTEGER NOT NULL,
     `overallMark` INTEGER NOT NULL,
     `grade` VARCHAR(191) NOT NULL,
     `studentId` VARCHAR(191) NOT NULL,
