@@ -1184,77 +1184,49 @@ export const deleteResult = async (
   }
 };
 
-export const processFailedResult = async (studentId: string, subjectId: number, marks: number) => {
-  const reappearRecord = await prisma.reappear.findFirst({
-    where: { studentId, subjectId, status: "Pending" },
+const applyGraceMarks = async (
+  studentId: string,
+  subjectId: number,
+  newMarks: number // Marks after grace is applied (provided from frontend)
+) => {
+  // Fetch the student's failure record
+  const failedRecord = await prisma.failedStudents.findFirst({
+    where: { studentId, subjectId },
   });
 
-  if (!reappearRecord) return;
-
-  const semesterId = reappearRecord.semesterId;
-  const graceRecord = await prisma.graceMarks.findUnique({
-    where: { studentId_semesterId: { studentId, semesterId } },
-  });
-
-  let graceLeft = (graceRecord?.totalGrace || 0) - (graceRecord?.usedGrace || 0);
-  const subject = await prisma.subject.findUnique({ where: { id: subjectId } });
-
-  if (!subject) return;
-
-  const passingMark = Math.ceil(subject.maxMarks! * 0.4);
-  const graceEligibleMark = Math.ceil(subject.maxMarks! * 0.35);
-
-  let finalMarks = marks;
-  let finalStatus = "Failed";
-  let usedGrace = 0;
-
-  if (marks >= passingMark) {
-    finalStatus = "Passed";
-  } else if (marks >= graceEligibleMark && graceLeft > 0) {
-    let neededGrace = passingMark - marks;
-    usedGrace = Math.min(neededGrace, graceLeft);
-    finalMarks += usedGrace;
-    graceLeft -= usedGrace;
-    finalStatus = "Passed";
+  if (!failedRecord) {
+    return { success: false, error: "Student is not in failed list" };
   }
 
-  // Update reappear status
-  await prisma.reappear.update({
-    where: { id: reappearRecord.id },
-    data: { status: finalStatus },
+  // Get the subject details
+  const subject = await prisma.subject.findUnique({
+    where: { id: subjectId },
   });
 
-  // If passed, update the result in the `Result` table
-  if (finalStatus === "Passed") {
-    const newGrade = calculateGrade(finalMarks, subject.maxMarks!);
-
-    await prisma.result.updateMany({
-      where: { studentId, subjectId },
-      data: {
-        overallMark: finalMarks,
-        grade: newGrade,
-      },
-    });
-
-    // Update used grace marks if grace was used
-    if (usedGrace > 0) {
-      await prisma.graceMarks.update({
-        where: { studentId_semesterId: { studentId, semesterId } },
-        data: { usedGrace: graceRecord?.usedGrace! + usedGrace },
-      });
-    }
+  if (!subject) {
+    return { success: false, error: "Subject not found" };
   }
-};
 
-// Helper function to calculate grade
-export const calculateGrade = (marks: number, maxMarks: number): string => {
-  const percentage = (marks / maxMarks) * 100;
+  const passingMark = Math.ceil(subject.maxMarks! * 0.4); // 40% required to pass
 
-  if (percentage >= 90) return "A+";
-  if (percentage >= 80) return "A";
-  if (percentage >= 70) return "B";
-  if (percentage >= 60) return "C";
-  if (percentage >= 50) return "D";
-  if (percentage >= 40) return "E";
-  return "F"; // Failing grade
+  if (newMarks < passingMark) {
+    return { success: false, error: "Marks after grace are still below passing criteria" };
+  }
+
+  // Update the result table
+  await prisma.result.updateMany({
+    where: { studentId, subjectId },
+    data: {
+      overallMark: newMarks,
+      grade: "D", // Grace marks applied, so minimum passing grade
+      usedGrace: true, // Mark that grace marks were used
+    },
+  });
+
+  // Remove the student from the failedStudents table
+  await prisma.failedStudents.deleteMany({
+    where: { studentId, subjectId },
+  });
+
+  return { success: true, message: "Grace marks applied successfully, student removed from failed list" };
 };
