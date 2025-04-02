@@ -38,6 +38,8 @@ model Student {
   GraceMarks   GraceMarks?
   Reappear     Reappear[]
   Failed       Failed[]
+  hasPassed    Boolean       @default(false)
+  hasLeft      Boolean       @default(false)
 }
 
 model Teacher {
