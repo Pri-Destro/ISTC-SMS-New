@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';   
-
-export const progressState = {   
-  total: 0,   
-  completed: 0,   
-  percentage: 0, 
-};  
+import { progressState } from '@/lib/progress-state';
 
 export function GET(req: NextRequest) {   
   // Create a Server-Sent Events response   
@@ -93,8 +88,3 @@ export function GET(req: NextRequest) {
   }); 
 }   
 
-export function updateProgress(completed: number, total: number) {   
-  progressState.completed = completed;   
-  progressState.total = total;   
-  progressState.percentage = total > 0 ? (completed / total) * 100 : 0; 
-}

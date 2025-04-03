@@ -75,7 +75,7 @@ const RegistrarListPage = async ({
       if (value !== undefined) {
         switch (key) {
           case "search":
-            query.username = { contains: value, mode: "insensitive" }; // Searching by username
+            query.username = { contains: value.toLowerCase()}; // Searching by username
             break;
           default:
             break;
@@ -137,7 +137,7 @@ const RegistrarListPage = async ({
       
       {/* Pagination with Better Styling */}
       <div className="mt-6 flex justify-center md:justify-end">
-        <Pagination page={p} count={count} />
+        <Pagination page={p} count={count} itemsPerPage={10}/>
       </div>
     </div>
   );

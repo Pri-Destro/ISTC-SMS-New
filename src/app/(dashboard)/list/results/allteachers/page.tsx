@@ -4,7 +4,7 @@ import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import type { Result, Student, Subject, Branch, Teacher } from "@prisma/client";
+import type { Result, Student, Subject, Branch, Teacher, Prisma } from "@prisma/client";
 import { ResultFilters } from "@/components/Filter";
 import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
@@ -46,13 +46,13 @@ const AllResultListPage = async ({ searchParams }: { searchParams: { [key: strin
 
   const query: Prisma.ResultWhereInput = {};
   if (queryParams.studentName) {
-    query.student = { name: { contains: queryParams.studentName, mode: "insensitive" } };
+    query.student = { name: { contains: queryParams.studentName.toLowerCase() } };
   }
   if (branchId) {
-    query.student = { ...query.student, branchId: Number.parseInt(branchId) };
+    query.student = { ...query.student, branchId: Number.parseInt(branchId) } as Prisma.StudentWhereInput;
   }
   if (semester) {
-    query.student = { ...query.student, semesterId: Number.parseInt(semester) };
+    query.student = { ...query.student, semesterId: Number.parseInt(semester) } as Prisma.StudentWhereInput;
   }
 
   let allowedSubjectIds: number[] = [];

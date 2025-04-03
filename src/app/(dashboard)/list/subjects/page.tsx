@@ -61,7 +61,7 @@ const SubjectListPage = async ({
       <td>
         <div className="flex items-center gap-2">
           
-          {(role === "admin" || role === "theoryIncharge" || role === "registrar" ) && (
+          {(role === "admin" || role === "theoryIncharge") && (
             <>
             <FormContainer table="subject" type="update" data={item} branchId={item.branchId} />
             </>

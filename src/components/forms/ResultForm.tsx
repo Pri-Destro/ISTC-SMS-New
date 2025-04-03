@@ -64,13 +64,13 @@ const ResultForm = ({
     return "E"; // Fail
   };
 
-  // ✅ Auto-update grade when overall marks change
+  
   useEffect(() => {
     const overallMarks = watch("overallMark");
     if (overallMarks !== undefined && overallMarks !== "") {
       setValue("grade", calculateGrade(Number(overallMarks)));
     }
-  }, [watch("overallMark"), setValue]);
+  }, [watch, setValue]);
 
   useEffect(() => {
     if (!hasSessionalExam) {

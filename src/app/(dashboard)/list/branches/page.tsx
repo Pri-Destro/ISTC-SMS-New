@@ -74,7 +74,7 @@ const renderRow = (item: BranchList) => (
       if (value !== undefined) {
         switch (key) {
           case "search":
-            query.name = { contains: value, mode: "insensitive" };
+            query.name = { contains: value.toLowerCase() };
             break;
           default:
             break;
@@ -140,7 +140,7 @@ const renderRow = (item: BranchList) => (
       
       {/* Pagination with Better Styling */}
       <div className="mt-6 flex justify-center md:justify-end">
-        <Pagination page={p} count={count} />
+        <Pagination page={p} count={count} itemsPerPage={10} />
       </div>
     </div>
   );

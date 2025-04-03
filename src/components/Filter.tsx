@@ -152,7 +152,7 @@ export function ResultFilters({
       url.searchParams.delete("subjectId");
       router.replace(url.toString());
     }
-  }, [branchId, semesters]);
+  }, [branchId, semesters, router]);
 
   // Update subjects when semester changes
   useEffect(() => {
@@ -171,7 +171,7 @@ export function ResultFilters({
       url.searchParams.delete("subjectId");
       router.replace(url.toString());
     }
-  }, [branchId, semester, subjects]);
+  }, [branchId, semester, subjects, router]);
 
   const handleFilterChange = (key: string, value: string) => {
     const url = new URL(window.location.href);
@@ -266,7 +266,7 @@ export function SubjectFilters({
       url.searchParams.delete("semester");
       router.replace(url.toString());
     }
-  }, [branchId, semesters]);
+  }, [branchId, semesters, router]);
 
   const handleFilterChange = (key: string, value: string) => {
     const url = new URL(window.location.href);

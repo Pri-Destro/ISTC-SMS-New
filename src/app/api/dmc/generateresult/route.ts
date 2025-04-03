@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { updateProgress } from '../progress/route';
+import { updateProgress } from '@/lib/progress-state';
 
 export async function POST(req: NextRequest) {
   try {

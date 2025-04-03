@@ -7,7 +7,7 @@ import * as XLSX from "xlsx";
 
 
 interface StudentResultDownloadProps {
-  role: "teacher" | "registrar";
+  role: "teacher" | "registrar" | undefined;
 }
 
 const StudentResultDownload: React.FC<StudentResultDownloadProps> = ({ role }) => {

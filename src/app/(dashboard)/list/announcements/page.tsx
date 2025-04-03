@@ -106,7 +106,8 @@ const AnnouncementListPage = async ({
       if (value !== undefined) {
         switch (key) {
           case "search":
-            query.title = { contains: value, mode: "insensitive" };
+            query.title = { 
+              contains: value.toLowerCase() };
             break;
           default:
             break;

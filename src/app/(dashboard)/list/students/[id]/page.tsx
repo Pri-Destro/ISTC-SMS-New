@@ -1,7 +1,5 @@
 import Announcements from "@/components/Announcements";
-import BigCalendarContainer from "@/components/BigCalendarContainer";
 import FormContainer from "@/components/FormContainer";
-import StudentAttendanceCard from "@/components/StudentAttendanceCard";
 import StudentResultCard from "@/components/StudentResultCard";
 import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
@@ -9,7 +7,6 @@ import { Branch, Student, Result, Subject } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import CharacterCertificate from "@/components/charactercertificate";
 import MigrationCertificate from "@/components/migrationcertificate"
 import MarksSheetCertificate from "@/components/Marksheet";
@@ -25,12 +22,15 @@ const SingleStudentPage = async ({
   const { sessionClaims } = auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-  const student:
-    | (Student & {
-        branch: Branch & { _count: { lectures: number } };
-        semester: { id: number; level: number };
-        results: (Result & { subject: Subject })[];
-      })
+
+  type StudentWithRelations = Student & {
+    branch: Branch & { _count: { lectures: number } };
+    semester: { id: number; level: number };
+    results: (Result & { subject: Subject | null })[];
+  };
+
+  const student :
+    StudentWithRelations 
     | null = await prisma.student.findUnique({
     where: { id },
     include: {
@@ -38,6 +38,7 @@ const SingleStudentPage = async ({
       semester: true,
       results: {
         include: { subject: true },
+        where: { subject: { isNot: null } }
       }
     },
   });
@@ -89,8 +90,8 @@ const SingleStudentPage = async ({
                   <span className="font-medium text-gray-600">Username:</span> {student.username}<br/>
                   <span className="font-medium text-gray-600">Email:</span> {student.email}<br/>
                   <span className="font-medium text-gray-600">Phone:</span> {student.phone}<br/>
-                  <span className="font-medium text-gray-600">Father's Name:</span> {student.fatherName}<br/>
-                  <span className="font-medium text-gray-600">Mother's Name:</span> {student.motherName}
+                  <span className="font-medium text-gray-600">Father&apos;s Name:</span> {student.fatherName}<br/>
+                  <span className="font-medium text-gray-600">Mother&apos;s Name:</span> {student.motherName}
                 </p>
               </div>
             </div>
@@ -161,7 +162,7 @@ const SingleStudentPage = async ({
               <div className="w-6 h-6 flex items-center justify-center bg-purple-100 rounded-full">
                 <Image src="/singleBranch.png" alt="" width={14} height={14} />
               </div>
-              Student's Teachers
+              Student&apos;s Teachers
             </Link>
             <Link
               className="p-3 rounded-md bg-yellow-50 hover:bg-yellow-100 transition-colors flex items-center gap-2 text-yellow-700 font-medium"
@@ -170,7 +171,7 @@ const SingleStudentPage = async ({
               <div className="w-6 h-6 flex items-center justify-center bg-yellow-100 rounded-full">
                 <Image src="/singleLesson.png" alt="" width={14} height={14} />
               </div>
-              Student's Results
+              Student&apos;s Results
             </Link>
             
             {/* Certificates section - only show when semester = 8 */}

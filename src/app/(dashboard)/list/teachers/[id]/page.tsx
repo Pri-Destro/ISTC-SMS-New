@@ -354,7 +354,7 @@ const SingleTeacherPage = async ({
               <div className="w-6 h-6 flex items-center justify-center bg-blue-100 rounded-full">
                 <Image src="/singleBranch.png" alt="" width={14} height={14} />
               </div>
-              Teacher's Branches
+              Teacher&apos;s Branches
             </Link>
             <Link
               className="p-3 rounded-md bg-purple-50 hover:bg-purple-100 transition-colors flex items-center gap-2 text-purple-700 font-medium"
@@ -363,7 +363,7 @@ const SingleTeacherPage = async ({
               <div className="w-6 h-6 flex items-center justify-center bg-purple-100 rounded-full">
                 <Image src="/singleBranch.png" alt="" width={14} height={14} />
               </div>
-              Teacher's Students
+              Teacher&apos;s Students
             </Link>
             
             <Link
@@ -373,7 +373,7 @@ const SingleTeacherPage = async ({
               <div className="w-6 h-6 flex items-center justify-center bg-pink-100 rounded-full">
                 <Image src="/singleClass.png" alt="" width={14} height={14} />
               </div>
-              Teacher's Exams
+              Teacher&apos;s Exams
             </Link>
             
           </div>

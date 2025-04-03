@@ -15,7 +15,7 @@ const ResultListPage = async ({ searchParams }: { searchParams: { [key: string]:
   // Get authenticated user
   const user = await currentUser();
   const teacherId = user?.id; // Directly using Clerk's user ID as teacherId
-  const role = user?.publicMetadata?.role as string | undefined;
+  const role = user?.publicMetadata?.role as "registrar" |"teacher" | undefined;
 
   console.log("User ID (Teacher ID):", teacherId);
   console.log("User Role:", role);
@@ -52,17 +52,17 @@ const ResultListPage = async ({ searchParams }: { searchParams: { [key: string]:
 
   // Handle search by student name
   if (queryParams.studentName) {
-    query.student = { name: { contains: queryParams.studentName, mode: "insensitive" } };
+    query.student = { name: { contains: queryParams.studentName.toLowerCase() } };
   }
 
   // Handle branch filter
   if (branchId) {
-    query.student = { ...query.student, branchId: Number.parseInt(branchId) };
+    query.student = { ...query.student, branchId: Number.parseInt(branchId) } as Prisma.StudentWhereInput;
   }
 
   // Handle semester filter
   if (semester) {
-    query.student = { ...query.student, semesterId: Number.parseInt(semester) };
+    query.student = { ...query.student, semesterId: Number.parseInt(semester) } as Prisma.StudentWhereInput;
   }
 
   // Fetch allotted subjects for the teacher
